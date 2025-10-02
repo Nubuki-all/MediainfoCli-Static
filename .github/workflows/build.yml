@@ -33,12 +33,12 @@ jobs:
       - name: move artifact (runner)
         working-directory: MediaInfo_CLI_GNU_FromSource
         run: |
-          mv MediaInfo/Project/GNU/CLI/mediainfo ../dist/mediainfo-${{ matrix.name }}
-      - name: Upload artifact (matrix)
+          mv MediaInfo/Project/GNU/CLI/mediainfo ../dist/mediainfo-linux-amd64
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mediainfo-${{ matrix.name }}
-          path: dist/mediainfo-${{ matrix.name }}
+          name: mediainfo-linux-amd64
+          path: dist/mediainfo-linux-amd64
           
           
   build-linux-musl:
@@ -47,10 +47,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: arm64
+          - name: linux-arm64
             dockcross_image: dockcross/linux-arm64-musl
             target: aarch64-linux-gnu
-          - name: armv7
+          - name: linux-armv7
             dockcross_image: dockcross/linux-armv7l-musl
             target: arm-linux-gnueabi
     steps:
@@ -81,7 +81,7 @@ jobs:
             apt update -y && apt -y install wget xz-utils file; \
             ./CLI_Compile.sh --host ${HOST}; \
             cd MediaInfo/Project/GNU/CLI; \
-            # g++ -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /home/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /home/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
+            ${CXX} -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /work/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /work/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
             file mediainfo; \
           "
       - name: move artifact (runner)
