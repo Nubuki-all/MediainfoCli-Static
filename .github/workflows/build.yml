@@ -73,12 +73,13 @@ jobs:
         working-directory: MediaInfo_CLI_GNU_FromSource
         run: |
           set -euo pipefail
-
+          CXXFLAGS="-DBUILD_SHARED_LIBS=off"
+          LDFLAGS="-static-libgcc -static-libstdc++ -s -w" 
           DOCKCROSS=./dockcross-${{ matrix.name }}
           ${DOCKCROSS} bash -lc "\
             set -euo pipefail; \
             apt update -y && apt -y install wget xz-utils file; \
-            CXXFLAGS="-DBUILD_SHARED_LIBS=off" LDFLAGS="-static-libgcc -static-libstdc++ -s -w" ./CLI_Compile.sh --host ${HOST}; \
+            ./CLI_Compile.sh --host ${HOST}; \
             cd MediaInfo/Project/GNU/CLI; \
             g++ -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /home/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /home/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
             file mediainfo; \
