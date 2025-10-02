@@ -45,7 +45,7 @@ jobs:
           DOCKCROSS=./dockcross-${{ matrix.name }}
           ${DOCKCROSS} bash -lc "\
             set -euo pipefail; \
-            apt install wget xz; \
+            apt update -y && apt -y install wget xz-utils; \
             ./CLI_Compile.sh --host ${HOST}; \
           "
       - name: Show and move artifact (runner)
