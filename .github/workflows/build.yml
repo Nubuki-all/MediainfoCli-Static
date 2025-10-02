@@ -1,0 +1,81 @@
+name: Build (musl) amd64, arm64, armv7
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+
+jobs:
+  build-linux-musl:
+    name: Build MediainfoCli linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: arm64
+            dockcross_image: dockcross/linux-arm64-musl
+            target: aarch64-linux-gnu
+          - name: armv7
+            dockcross_image: dockcross/linux-armv7l-musl
+            target: arm-linux-gnueabi
+    steps:
+      - name: Download and extract mediainfo 
+        run: |
+          mkdir dist
+          wget https://mediaarea.net/download/binary/mediainfo/25.09/MediaInfo_CLI_25.09_GNU_FromSource.tar.gz
+          tar -xvf *gz
+      
+      
+      - name: Pull dockcross helper script
+        working-directory: MediaInfo_CLI_GNU_FromSource
+        run: |
+          # create dockcross helper in repo root
+          docker run --rm ${{ matrix.dockcross_image }} > ./dockcross-${{ matrix.name }}
+          chmod +x ./dockcross-${{ matrix.name }}
+      - name: Build inside dockcross (matrix)
+        env:
+          HOST: ${{ matrix.target }}
+        working-directory: MediaInfo_CLI_GNU_FromSource
+        run: |
+          set -euo pipefail
+
+          DOCKCROSS=./dockcross-${{ matrix.name }}
+          ${DOCKCROSS} bash -lc "\
+            set -euo pipefail; \
+            apt install wget xz; \
+            ./CLI_Compile.sh --host ${HOST}; \
+          "
+      - name: Show and move artifact (runner)
+        working-directory: MediaInfo_CLI_GNU_FromSource
+        run: |
+          echo "Artifacts inside repo:"
+          ls -la mediainfo || true
+          mv mediainfo ../dist/mediainfo-${{ matrix.name }}
+      - name: Upload artifact (matrix)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mediainfo-${{ matrix.name }}
+          path: dist/mediainfo-${{ matrix.name }}
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-linux-musl]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: binaries
+
+      - name: Upload shared library to draft release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          files: |
+            binaries/*
+          generate_release_notes: true
+          tag_name: latest
+          
