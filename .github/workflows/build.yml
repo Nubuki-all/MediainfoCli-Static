@@ -9,6 +9,38 @@ on:
 
 
 jobs:
+  build-linux-native-musl:
+    name: Build linux/amd64 (musl, native)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install musl toolchain and deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential git musl-tools curl ca-certificates pkg-config wget xz-utils file || true
+          mkdir dist
+          wget https://mediaarea.net/download/binary/mediainfo/25.09/MediaInfo_CLI_25.09_GNU_FromSource.tar.gz
+          tar -xvf *gz
+      - name: Build (amd64 musl)
+        working-directory: MediaInfo_CLI_GNU_FromSource
+        env:
+          CC: "musl-gcc"
+        run: |
+          set -euo pipefail
+          CXXFLAGS="-DBUILD_SHARED_LIBS=off" LDFLAGS="-static-libgcc -static-libstdc++ -s -w" ./CLI_Compile.sh
+          cd MediaInfo/Project/GNU/CLI
+          g++ -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /home/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /home/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread #To force a static build
+          file mediainfo
+      - name: move artifact (runner)
+        working-directory: MediaInfo_CLI_GNU_FromSource
+        run: |
+          mv MediaInfo/Project/GNU/CLI/mediainfo ../dist/mediainfo-${{ matrix.name }}
+      - name: Upload artifact (matrix)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mediainfo-${{ matrix.name }}
+          path: dist/mediainfo-${{ matrix.name }}
+          
+          
   build-linux-musl:
     name: Build MediainfoCli linux
     runs-on: ubuntu-latest
@@ -45,15 +77,16 @@ jobs:
           DOCKCROSS=./dockcross-${{ matrix.name }}
           ${DOCKCROSS} bash -lc "\
             set -euo pipefail; \
-            apt update -y && apt -y install wget xz-utils; \
-            ./CLI_Compile.sh --host ${HOST}; \
+            apt update -y && apt -y install wget xz-utils file; \
+            CXXFLAGS="-DBUILD_SHARED_LIBS=off" LDFLAGS="-static-libgcc -static-libstdc++ -s -w" ./CLI_Compile.sh --host ${HOST}; \
+            cd MediaInfo/Project/GNU/CLI; \
+            g++ -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /home/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /home/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
+            file mediainfo; \
           "
-      - name: Show and move artifact (runner)
+      - name: move artifact (runner)
         working-directory: MediaInfo_CLI_GNU_FromSource
         run: |
-          echo "Artifacts inside repo:"
-          ls -la mediainfo || true
-          mv mediainfo ../dist/mediainfo-${{ matrix.name }}
+          mv MediaInfo/Project/GNU/CLI/mediainfo ../dist/mediainfo-${{ matrix.name }}
       - name: Upload artifact (matrix)
         uses: actions/upload-artifact@v4
         with:
@@ -62,7 +95,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [build-linux-musl]
+    needs: [build-linux-musl, build-linux-native-musl]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
