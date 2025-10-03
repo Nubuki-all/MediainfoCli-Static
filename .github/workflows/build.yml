@@ -82,7 +82,7 @@ jobs:
             apt update -y && apt -y install wget xz-utils file; \
             ./CLI_Compile.sh --host ${HOST}; \
             cd MediaInfo/Project/GNU/CLI; \
-            $CXXV -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /work/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /work/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ 
+            $CXXV -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /work/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /work/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \
             file mediainfo; \
           "
       - name: move artifact (runner)
