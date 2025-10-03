@@ -70,6 +70,7 @@ jobs:
       - name: Build inside dockcross (matrix)
         env:
           HOST: ${{ matrix.target }}
+          CXXV: "$CXX"
         working-directory: MediaInfo_CLI_GNU_FromSource
         run: |
           set -euo pipefail
@@ -81,7 +82,7 @@ jobs:
             apt update -y && apt -y install wget xz-utils file; \
             ./CLI_Compile.sh --host ${HOST}; \
             cd MediaInfo/Project/GNU/CLI; \
-            "${CXX@Q}" -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /work/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /work/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
+            $CXXV -std=c++11 -DBUILD_SHARED_LIBS=off -O2 -DUNICODE -FMT_UNICODE=0 -DUNICODE -DSIZE_T_IS_LONG -static-libgcc -static-libstdc++ -static -s -w -o mediainfo CLI_Main.o CommandLine_Parser.o Help.o Core.o  /work/MediaInfo_CLI_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/libmediainfo.a -L../../../../Shared/Source/zlib -lz /work/MediaInfo_CLI_GNU_FromSource/ZenLib/Project/GNU/Library/.libs/libzen.a -lpthread; \ #To force a static build
             file mediainfo; \
           "
       - name: move artifact (runner)
